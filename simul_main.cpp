@@ -9,10 +9,14 @@
 #include "simul_struct.h"
 #include "Queue.h"
 
+
 #include "hal.h"
+
+#include "Rest.h"
 
 using namespace std;
 using namespace concurrency;
+extern void connect_();
 
 Queue<PeripheralMsg> msg_to_periph;
 Queue<PeripheralMsg> msg_from_periph;
@@ -88,8 +92,9 @@ static DWORD WINAPI Simulate_Peripheral(LPVOID  data) {
 static DWORD WINAPI ISR_thread(LPVOID  data) {
 	PeripheralMsg msg;
 	while (1) {
-		msg_from_periph.pop(msg);
-
+		getInterrupt();
+		//msg_from_periph.pop(msg);
+		msg.peripheralType = PeripheralMsg::kIICisr;
 		switch (msg.peripheralType) {
 		case PeripheralMsg::kIICisr:
 			SIMUL_ISR_TWI_vect();
@@ -107,6 +112,7 @@ static DWORD WINAPI main_thread(LPVOID  data) {
 }
 
 int main() {
+	connect_();
 
 	HANDLE thread_ISR = CreateThread(NULL, 0, ISR_thread, NULL, CREATE_SUSPENDED, NULL);
 	if (thread_ISR == NULL) {
